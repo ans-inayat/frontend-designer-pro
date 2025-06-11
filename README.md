@@ -54,7 +54,7 @@ https://github.com/user-attachments/assets/c15af4fa-ed49-46d2-95ed-866a42cf25c3
 
 ## 🎬 Experience the AI Vibe
 
-**Try your AI coding agent live:** [Frontend Designer Pro - AI Vibe Demo](https://your-demo-url.netlify.app)
+**Try your AI coding agent live:** [Frontend Designer Pro - AI Vibe Demo](https://vizcode.netlify.app)
 
 ### AI Vibe Transformation Examples:
 - **Your Idea:** "Create a modern landing page for a SaaS product"
