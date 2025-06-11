@@ -8,7 +8,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![AI Vibe Coding](https://img.shields.io/badge/AI%20Vibe-Coding%20Agent-purple.svg)](https://github.com/ans.inayat/frontend-designer-pro)
 
-![AI Vibe Coding Agent Demo](https://source.unsplash.com/1200x600/?artificial-intelligence,coding,futuristic,neon)
+![AI Vibe Coding Agent Demo](https://vizcode.netlify.app)
 
 
 https://github.com/user-attachments/assets/c15af4fa-ed49-46d2-95ed-866a42cf25c3
