@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Designer - AI Code Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        'primary-dark': '#4f46e5',
+                        gemini: '#4285f4',
+                        claude: '#D97706',
+                        mistral: '#7C3AED'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        
+        .loading-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .code-editor {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .ai-model-badge {
+            transition: all 0.3s ease;
+        }
+
+        .ai-model-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .deployment-success {
+            animation: successPulse 0.5s ease-in-out;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .model-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .model-claude { background-color: #D97706; }
+        .model-mistral { background-color: #7C3AED; }
+        .model-gemini { background-color: #4285f4; }
+        .model-fallback { background-color: #6B7280; }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+    <!-- Header -->
+    <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 shadow-sm">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-lg flex items-center justify-center">
+                    <i class="fas fa-code text-white text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
+                        Frontend Designer
+                    </h1>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        AI-Powered Code Generator v2.0
+                    </div>
+                </div>
+            </div>
+            <!-- AI Status Indicators -->
+            <div class="hidden lg:flex items-center space-x-2">
+                <div id="aiStatus" class="flex items-center space-x-1 text-xs"></div>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- AI Model Selector -->
+            <div class="relative">
+                <select id="aiModel" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary ai-model-badge">
+                    <option value="claude" data-color="claude">🧠 Claude AI</option>
+                    <option value="mistral" data-color="mistral">⚡ Mistral AI</option>
+                    <option value="gemini" data-color="gemini">🤖 Google Gemini</option>
+                </select>
+            </div>
+            
+            <!-- Theme Toggle -->
+            <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:inline"></i>
+            </button>
+            
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2">
+                <button id="downloadBtn" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm">
+                    <i class="fas fa-download"></i>
+                    <span>Download</span>
+                </button>
+                
+                <button id="deployBtn" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 text-sm">
+                    <i class="fas fa-rocket"></i>
+                    <span>Deploy</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex min-h-[calc(100vh-4rem)] flex-col lg:flex-row">
+        <!-- Left Panel -->
+        <div class="w-full lg:w-1/2 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col min-h-[60vh] lg:min-h-full">
+            <!-- Input Section -->
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="space-y-4">
+                    <!-- AI Model Info -->
+                    <div id="modelInfo" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-l-4 border-primary">
+                        <div class="flex items-center space-x-2">
+                            <span id="modelIndicator" class="model-indicator model-claude"></span>
+                            <span class="text-sm font-medium" id="modelName">Claude AI</span>
+                            <span class="text-xs text-gray-500" id="modelStatus">Ready</span>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Input -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Describe your UI</label>
+                        <textarea 
+                            id="promptInput" 
+                            placeholder="Example: Create a modern landing page with hero section, navigation, and contact form using gradients and animations"
+                            class="w-full h-32 p-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 placeholder-gray-500"
+                        ></textarea>
+                        
+                        <!-- Prompt Enhancement Options -->
+                        <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Prompt Enhancement</label>
+                                <button id="enhanceHelpBtn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="Learn about prompt enhancement">
+                                    <i class="fas fa-question-circle"></i>
+                                </button>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="radio" name="promptMode" value="raw" checked class="text-primary focus:ring-primary">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Use my prompt as-is</span>
+                                    <span class="text-xs text-gray-500">(Faster)</span>
+                                </label>
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="radio" name="promptMode" value="enhanced" class="text-primary focus:ring-primary">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Enhance my prompt with AI</span>
+                                    <span class="text-xs text-purple-600 dark:text-purple-400">(Better results)</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Enhanced Prompt Preview -->
+                            <div id="enhancedPromptPreview" class="hidden mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-700">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-sparkles text-purple-600"></i>
+                                    <span class="text-sm font-medium text-purple-700 dark:text-purple-300">Enhanced Prompt:</span>
+                                </div>
+                                <div id="enhancedPromptText" class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded border italic"></div>
+                                <div class="flex items-center space-x-2 mt-2">
+                                    <button id="useEnhancedBtn" class="text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition-colors">
+                                        Use Enhanced
+                                    </button>
+                                    <button id="editEnhancedBtn" class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors">
+                                        Edit Enhanced
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Templates -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Quick Templates</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setTemplate('landing')" class="p-2 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                                🏠 Landing Page
+                            </button>
+                            <button onclick="setTemplate('dashboard')" class="p-2 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
+                                📊 Dashboard
+                            </button>
+                            <button onclick="setTemplate('portfolio')" class="p-2 text-xs bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors">
+                                💼 Portfolio
+                            </button>
+                            <button onclick="setTemplate('ecommerce')" class="p-2 text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
+                                🛒 E-commerce
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Image Upload -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Upload Design Reference (Optional)</label>
+                        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer" id="imageUpload">
+                            <input type="file" id="imageInput" accept="image/*" class="hidden">
+                            <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
+                            <p class="text-sm text-gray-500">Click to upload or drag and drop</p>
+                            <p class="text-xs text-gray-400 mt-1">PNG, JPG, WebP up to 10MB</p>
+                        </div>
+                        <div id="imagePreview" class="mt-2 hidden">
+                            <img id="previewImg" class="max-w-full h-24 object-cover rounded-lg">
+                            <button id="removeImage" class="mt-2 text-red-500 hover:text-red-700 text-sm">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Generate Button -->
+                    <button 
+                        id="generateBtn" 
+                        class="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                    >
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Code</span>
+                    </button>
+                    
+                    <!-- Enhance Prompt Button (shown when enhanced mode is selected) -->
+                    <button 
+                        id="enhancePromptBtn" 
+                        class="hidden w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 text-sm"
+                    >
+                        <i class="fas fa-sparkles"></i>
+                        <span>Enhance Prompt First</span>
+                    </button>
+                    
+                    <!-- Status Message -->
+                    <div id="statusMessage" class="hidden p-3 rounded-lg text-sm"></div>
+                </div>
+            </div>
+            
+            <!-- Code Output -->
+            <div class="flex-1 flex flex-col">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <h3 class="font-medium">Generated Code</h3>
+                        <span id="codeStats" class="text-xs text-gray-500"></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="copyBtn" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-sm transition-colors">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button id="formatBtn" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-sm transition-colors">
+                            <i class="fas fa-code"></i> Format
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 p-4">
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <div class="inline-block w-8 h-8 border-4 border-primary border-r-transparent rounded-full animate-spin mb-4"></div>
+                            <p class="text-gray-500" id="loadingText">Generating your code...</p>
+                            <p class="text-xs text-gray-400 mt-2" id="loadingSubtext">Using AI to create beautiful UI</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Code Textarea -->
+                    <textarea 
+                        id="codeOutput" 
+                        class="w-full h-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-4 code-editor resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Generated code will appear here..."
+                        readonly
+                    ></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel - Preview -->
+        <div class="w-full lg:w-1/2 bg-gray-100 dark:bg-gray-900 flex flex-col min-h-[40vh] lg:min-h-full">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
+                <h3 class="font-medium">Live Preview</h3>
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-1">
+                        <button id="mobileView" class="p-2 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" title="Mobile View">
+                            <i class="fas fa-mobile-alt"></i>
+                        </button>
+                        <button id="tabletView" class="p-2 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" title="Tablet View">
+                            <i class="fas fa-tablet-alt"></i>
+                        </button>
+                        <button id="desktopView" class="p-2 text-xs bg-primary text-white rounded transition-colors" title="Desktop View">
+                            <i class="fas fa-desktop"></i>
+                        </button>
+                    </div>
+                    <div class="border-l border-gray-300 dark:border-gray-600 pl-2 flex items-center space-x-1">
+                        <button id="refreshBtn" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-sm transition-colors">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                        <button id="fullscreenBtn" class="px-3 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-sm transition-colors">
+                            <i class="fas fa-expand"></i> Fullscreen
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 p-4">
+                <div id="previewContainer" class="w-full h-full transition-all duration-300">
+                    <iframe 
+                        id="previewFrame" 
+                        class="w-full h-full border-0 rounded-lg shadow-lg bg-white"
+                        srcdoc="<html><body style='font-family: Arial, sans-serif; padding: 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;'><div><h1 style='font-size: 2rem; margin-bottom: 1rem;'>🚀 Frontend Designer v2.0</h1><p style='font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;'>Your AI-powered code generator</p><div style='background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 1rem; backdrop-filter: blur(10px);'><h3 style='margin-bottom: 1rem;'>✨ New Features</h3><p style='margin: 0.5rem 0; opacity: 0.9;'>🤖 Google Gemini AI</p><p style='margin: 0.5rem 0; opacity: 0.9;'>⬇️ Direct Download</p><p style='margin: 0.5rem 0; opacity: 0.9;'>🚀 Netlify Deploy</p><p style='margin-top: 1.5rem; opacity: 0.9;'>Enter a prompt to get started!</p></div></div></body></html>"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal for Prompt Enhancement -->
+    <div id="promptHelpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold flex items-center space-x-2">
+                    <i class="fas fa-sparkles text-purple-600"></i>
+                    <span>Prompt Enhancement</span>
+                </h3>
+                <button id="closePromptHelp" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-sm">
+                <div>
+                    <h4 class="font-medium text-purple-700 dark:text-purple-300 mb-2">What is Prompt Enhancement?</h4>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Our AI analyzes your prompt and enhances it with technical details, design specifications, and best practices to generate better code.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-green-700 dark:text-green-300 mb-2">Benefits:</h4>
+                    <ul class="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
+                        <li>More detailed and specific code generation</li>
+                        <li>Better design patterns and layouts</li>
+                        <li>Improved accessibility and responsiveness</li>
+                        <li>Modern UI/UX best practices included</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-blue-700 dark:text-blue-300 mb-2">Example:</h4>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                        <p class="text-xs text-gray-500 mb-1">Your prompt:</p>
+                        <p class="text-gray-700 dark:text-gray-300 mb-2">"Create a landing page"</p>
+                        
+                        <p class="text-xs text-purple-500 mb-1">Enhanced prompt:</p>
+                        <p class="text-gray-700 dark:text-gray-300 text-xs">
+                            "Create a modern, responsive landing page with a hero section featuring a gradient background, navigation bar with smooth scrolling, feature cards grid, testimonial section, and footer. Use modern design principles, proper accessibility, and mobile-first approach..."
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="w-full mt-4 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                Got it!
+            </button>
+        </div>
+    </div>
+    <div id="deployModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Deploy to Netlify</h3>
+                <button id="closeDeployModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Site Name</label>
+                    <input type="text" id="siteName" placeholder="my-awesome-site" 
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Netlify Access Token (Optional)</label>
+                    <input type="password" id="netlifyToken" placeholder="Leave empty to use server default" 
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700">
+                    <p class="text-xs text-gray-500 mt-1">Get your token from <a href="https://app.netlify.com/user/applications#personal-access-tokens" target="_blank" class="text-blue-500 hover:underline">Netlify Settings</a></p>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button id="cancelDeploy" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="confirmDeploy" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Deploy
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Deployment Status -->
+            <div id="deployStatus" class="hidden mt-4 p-3 rounded-lg">
+                <div class="flex items-center space-x-2">
+                    <div class="w-4 h-4 border-2 border-blue-600 border-r-transparent rounded-full animate-spin"></div>
+                    <span>Deploying to Netlify...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Modal -->
+    <div id="fullscreenModal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-center">
+        <div class="w-full h-full max-w-7xl max-h-full p-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white text-xl font-medium">Fullscreen Preview</h3>
+                <button id="closeFullscreen" class="text-white hover:text-gray-300 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <iframe id="fullscreenFrame" class="w-full h-[calc(100%-3rem)] bg-white rounded-lg"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentImageData = null;
+        let currentCode = '';
+        let lastUsedModel = 'claude';
+        let enhancedPrompt = '';
+        let isPromptEnhanced = false;
+
+        // Template prompts
+        const templates = {
+            landing: "Create a modern landing page with a hero section, navigation bar, features grid, testimonials, and footer. Use gradients and animations.",
+            dashboard: "Build a responsive dashboard with sidebar navigation, charts, data tables, and stats cards. Use a clean, professional design.",
+            portfolio: "Design a personal portfolio website with about section, projects gallery, skills showcase, and contact form. Make it creative and modern.",
+            ecommerce: "Create an e-commerce product page with image gallery, product details, reviews, and purchase options. Include shopping cart functionality."
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+            setupEventListeners();
+            checkServerConnection();
+            updateModelInfo();
+        });
+
+        // Theme Management
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+        });
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // Image upload
+            setupImageUpload();
+            
+            // AI Model selection
+            document.getElementById('aiModel').addEventListener('change', updateModelInfo);
+            
+            // Prompt enhancement
+            setupPromptEnhancement();
+            
+            // Generate button
+            document.getElementById('generateBtn').addEventListener('click', generateCode);
+            
+            // Code actions
+            document.getElementById('copyBtn').addEventListener('click', copyCode);
+            document.getElementById('formatBtn').addEventListener('click', formatCode);
+            document.getElementById('refreshBtn').addEventListener('click', refreshPreview);
+            document.getElementById('fullscreenBtn').addEventListener('click', openFullscreen);
+            
+            // Download and Deploy
+            document.getElementById('downloadBtn').addEventListener('click', downloadProject);
+            document.getElementById('deployBtn').addEventListener('click', openDeployModal);
+            
+            // Responsive view buttons
+            setupResponsiveViews();
+            
+            // Deploy modal
+            setupDeployModal();
+            
+            // Help modal
+            setupHelpModal();
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+        }
+
+        // Prompt Enhancement Setup
+        function setupPromptEnhancement() {
+            const promptModeRadios = document.querySelectorAll('input[name="promptMode"]');
+            const enhancePromptBtn = document.getElementById('enhancePromptBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            const enhancedPromptPreview = document.getElementById('enhancedPromptPreview');
+            const useEnhancedBtn = document.getElementById('useEnhancedBtn');
+            const editEnhancedBtn = document.getElementById('editEnhancedBtn');
+
+            // Handle prompt mode change
+            promptModeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const isEnhanced = radio.value === 'enhanced';
+                    
+                    if (isEnhanced) {
+                        enhancePromptBtn.classList.remove('hidden');
+                        generateBtn.innerHTML = '<i class="fas fa-magic"></i> <span>Generate with Enhanced Prompt</span>';
+                    } else {
+                        enhancePromptBtn.classList.add('hidden');
+                        enhancedPromptPreview.classList.add('hidden');
+                        generateBtn.innerHTML = '<i class="fas fa-magic"></i> <span>Generate Code</span>';
+                        isPromptEnhanced = false;
+                    }
+                });
+            });
+
+            // Enhance prompt button
+            enhancePromptBtn.addEventListener('click', enhancePrompt);
+
+            // Use enhanced prompt
+            useEnhancedBtn.addEventListener('click', () => {
+                document.getElementById('promptInput').value = enhancedPrompt;
+                enhancedPromptPreview.classList.add('hidden');
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> <span>Generate Code</span>';
+                showStatus('Enhanced prompt applied! Ready to generate.', 'success');
+            });
+
+            // Edit enhanced prompt
+            editEnhancedBtn.addEventListener('click', () => {
+                const enhancedPromptText = document.getElementById('enhancedPromptText');
+                const currentText = enhancedPromptText.textContent;
+                
+                // Create editable textarea
+                enhancedPromptText.innerHTML = `
+                    <textarea class="w-full h-24 p-2 border border-gray-300 dark:border-gray-600 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700">${currentText}</textarea>
+                    <div class="flex space-x-2 mt-2">
+                        <button id="saveEditedPrompt" class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors">Save</button>
+                        <button id="cancelEditPrompt" class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors">Cancel</button>
+                    </div>
+                `;
+
+                // Handle save
+                document.getElementById('saveEditedPrompt').addEventListener('click', () => {
+                    const textarea = enhancedPromptText.querySelector('textarea');
+                    enhancedPrompt = textarea.value;
+                    enhancedPromptText.innerHTML = enhancedPrompt;
+                    showStatus('Enhanced prompt updated!', 'success');
+                });
+
+                // Handle cancel
+                document.getElementById('cancelEditPrompt').addEventListener('click', () => {
+                    enhancedPromptText.innerHTML = enhancedPrompt;
+                });
+            });
+        }
+
+        // Enhance prompt using Mistral AI
+        async function enhancePrompt() {
+            const promptInput = document.getElementById('promptInput');
+            const originalPrompt = promptInput.value.trim();
+
+            if (!originalPrompt) {
+                showStatus('Please enter a prompt first', 'error');
+                return;
+            }
+
+            const enhancePromptBtn = document.getElementById('enhancePromptBtn');
+            const enhancedPromptPreview = document.getElementById('enhancedPromptPreview');
+            const enhancedPromptText = document.getElementById('enhancedPromptText');
+
+            // Show loading state
+            enhancePromptBtn.disabled = true;
+            enhancePromptBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Enhancing...</span>';
+            
+            showStatus('🎨 Enhancing your prompt with AI...', 'info');
+
+            try {
+                const response = await fetch('/api/enhance-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: originalPrompt,
+                        includeImage: !!currentImageData
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    enhancedPrompt = data.enhancedPrompt;
+                    enhancedPromptText.textContent = enhancedPrompt;
+                    enhancedPromptPreview.classList.remove('hidden');
+                    isPromptEnhanced = true;
+                    
+                    let statusMessage = '✨ Prompt enhanced successfully!';
+                    if (data.method === 'fallback') {
+                        statusMessage += ' (Using smart fallback enhancement)';
+                    }
+                    if (data.warning) {
+                        statusMessage += ` - ${data.warning}`;
+                    }
+                    
+                    showStatus(statusMessage, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to enhance prompt');
+                }
+
+            } catch (error) {
+                console.error('Prompt enhancement error:', error);
+                
+                // Try to generate a local fallback enhancement
+                try {
+                    enhancedPrompt = generateLocalFallbackEnhancement(originalPrompt);
+                    enhancedPromptText.textContent = enhancedPrompt;
+                    enhancedPromptPreview.classList.remove('hidden');
+                    isPromptEnhanced = true;
+                    showStatus('⚡ Used local prompt enhancement (AI service unavailable)', 'success');
+                } catch (fallbackError) {
+                    showStatus('❌ Failed to enhance prompt: ' + error.message, 'error');
+                }
+            } finally {
+                enhancePromptBtn.disabled = false;
+                enhancePromptBtn.innerHTML = '<i class="fas fa-sparkles"></i> <span>Enhance Prompt First</span>';
+            }
+        }
+
+        // Local fallback enhancement function
+        function generateLocalFallbackEnhancement(originalPrompt) {
+            const lowerPrompt = originalPrompt.toLowerCase();
+            
+            let enhancement = `Create a modern, responsive web interface: ${originalPrompt}. `;
+            
+            if (lowerPrompt.includes('ecommerce') || lowerPrompt.includes('product') || lowerPrompt.includes('shop')) {
+                enhancement += `Include: product image gallery with zoom, detailed specifications, customer reviews with star ratings, add to cart functionality, related products section, breadcrumb navigation, trust badges, and secure checkout process. Use modern e-commerce design patterns with clean product cards, prominent pricing, and clear call-to-action buttons.`;
+            } else if (lowerPrompt.includes('landing') || lowerPrompt.includes('homepage')) {
+                enhancement += `Include: hero section with gradient background, navigation bar, features grid with icons, testimonials, pricing section, and footer. Use modern design with smooth animations, responsive layout, and compelling call-to-action buttons.`;
+            } else if (lowerPrompt.includes('dashboard')) {
+                enhancement += `Include: sidebar navigation, stats cards, charts and graphs, data tables, user profile section, and responsive layout. Use professional color scheme and clean, organized interface.`;
+            } else {
+                enhancement += `Use modern design principles with clean typography, consistent spacing, attractive colors, responsive layout, smooth animations, and proper accessibility features.`;
+            }
+            
+            enhancement += ` Ensure mobile-first responsive design, semantic HTML5, and modern CSS techniques.`;
+            
+            return enhancement;
+        }
+
+        // Help Modal Setup
+        function setupHelpModal() {
+            const enhanceHelpBtn = document.getElementById('enhanceHelpBtn');
+            const promptHelpModal = document.getElementById('promptHelpModal');
+            const closePromptHelp = document.getElementById('closePromptHelp');
+
+            enhanceHelpBtn.addEventListener('click', () => {
+                promptHelpModal.classList.remove('hidden');
+            });
+
+            closePromptHelp.addEventListener('click', () => {
+                promptHelpModal.classList.add('hidden');
+            });
+
+            // Close on backdrop click
+            promptHelpModal.addEventListener('click', (e) => {
+                if (e.target === promptHelpModal) {
+                    promptHelpModal.classList.add('hidden');
+                }
+            });
+
+            // Close modal button
+            promptHelpModal.querySelector('button:last-child').addEventListener('click', () => {
+                promptHelpModal.classList.add('hidden');
+            });
+        }
+        function setTemplate(type) {
+            if (templates[type]) {
+                document.getElementById('promptInput').value = templates[type];
+                showStatus(`Template loaded: ${type}`, 'success');
+            }
+        }
+
+        // Update model info display
+        function updateModelInfo() {
+            const modelSelect = document.getElementById('aiModel');
+            const selectedModel = modelSelect.value;
+            const modelName = document.getElementById('modelName');
+            const modelIndicator = document.getElementById('modelIndicator');
+            
+            // Update display
+            modelName.textContent = modelSelect.options[modelSelect.selectedIndex].text;
+            modelIndicator.className = `model-indicator model-${selectedModel}`;
+            
+            // Update loading text for different models
+            const loadingTexts = {
+                claude: 'Claude is thinking...',
+                mistral: 'Mistral is generating...',
+                gemini: 'Gemini is creating...'
+            };
+            
+            lastUsedModel = selectedModel;
+        }
+
+        // Image Upload Setup
+        function setupImageUpload() {
+            const imageUpload = document.getElementById('imageUpload');
+            const imageInput = document.getElementById('imageInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            const removeImage = document.getElementById('removeImage');
+
+            imageUpload.addEventListener('click', () => imageInput.click());
+
+            imageUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageUpload.classList.add('border-primary');
+            });
+
+            imageUpload.addEventListener('dragleave', () => {
+                imageUpload.classList.remove('border-primary');
+            });
+
+            imageUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageUpload.classList.remove('border-primary');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleImageUpload(files[0]);
+                }
+            });
+
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleImageUpload(e.target.files[0]);
+                }
+            });
+
+            removeImage.addEventListener('click', () => {
+                imagePreview.classList.add('hidden');
+                imageInput.value = '';
+                previewImg.src = '';
+                currentImageData = null;
+                showStatus('Image removed', 'info');
+            });
+        }
+
+        function handleImageUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                showStatus('Please upload an image file', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showStatus('Image must be smaller than 10MB', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                currentImageData = e.target.result;
+                imagePreview.classList.remove('hidden');
+                showStatus('Image uploaded successfully', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Code Generation
+        async function generateCode() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                showStatus('Please enter a prompt describing your UI', 'error');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const codeOutput = document.getElementById('codeOutput');
+            const aiModel = document.getElementById('aiModel').value;
+
+            // Show loading state
+            loadingIndicator.classList.remove('hidden');
+            codeOutput.style.display = 'none';
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Generating...</span>';
+            
+            // Update loading text based on model
+            const loadingTexts = {
+                claude: 'Claude is analyzing your request...',
+                mistral: 'Mistral is crafting your UI...',
+                gemini: 'Gemini is designing your interface...'
+            };
+            
+            document.getElementById('loadingText').textContent = loadingTexts[aiModel] || 'Generating your code...';
+            document.getElementById('loadingSubtext').textContent = `Using ${aiModel.toUpperCase()} AI model`;
+            
+            showStatus(`Generating code with ${aiModel.toUpperCase()}...`, 'info');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        model: aiModel,
+                        image: currentImageData
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentCode = data.code;
+                    codeOutput.value = data.code;
+                    updatePreview(data.code);
+                    updateCodeStats(data.code);
+                    showStatus(`✨ Code generated successfully with ${data.model.toUpperCase()}!`, 'success');
+                    
+                    // Update model status
+                    document.getElementById('modelStatus').textContent = 'Success';
+                } else {
+                    throw new Error(data.error || 'Failed to generate code');
+                }
+                
+            } catch (error) {
+                console.error('Error generating code:', error);
+                showStatus('❌ Error: ' + error.message, 'error');
+                document.getElementById('modelStatus').textContent = 'Error';
+            } finally {
+                // Reset UI state
+                loadingIndicator.classList.add('hidden');
+                codeOutput.style.display = 'block';
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> <span>Generate Code</span>';
+            }
+        }
+
+        // Update preview
+        function updatePreview(code) {
+            document.getElementById('previewFrame').srcdoc = code;
+        }
+
+        // Update code statistics
+        function updateCodeStats(code) {
+            const lines = code.split('\n').length;
+            const chars = code.length;
+            const size = (chars / 1024).toFixed(1);
+            document.getElementById('codeStats').textContent = `${lines} lines • ${size}KB`;
+        }
+
+        // Copy code functionality
+        async function copyCode() {
+            const code = document.getElementById('codeOutput').value;
+            if (!code) {
+                showStatus('No code to copy', 'error');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(code);
+                const copyBtn = document.getElementById('copyBtn');
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                showStatus('Code copied to clipboard', 'success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                }, 2000);
+            } catch (error) {
+                showStatus('Failed to copy code', 'error');
+            }
+        }
+
+        // Format code
+        function formatCode() {
+            const codeOutput = document.getElementById('codeOutput');
+            const code = codeOutput.value;
+            if (!code) {
+                showStatus('No code to format', 'error');
+                return;
+            }
+            
+            try {
+                // Simple HTML formatting
+                const formatted = code
+                    .replace(/></g, '>\n<')
+                    .replace(/\n\s*\n/g, '\n')
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .join('\n');
+                    
+                codeOutput.value = formatted;
+                currentCode = formatted;
+                showStatus('Code formatted successfully', 'success');
+            } catch (error) {
+                showStatus('Failed to format code', 'error');
+            }
+        }
+
+        // Refresh preview
+        function refreshPreview() {
+            const code = document.getElementById('codeOutput').value;
+            if (code) {
+                updatePreview(code);
+                showStatus('Preview refreshed', 'success');
+            }
+        }
+
+        // Fullscreen functionality
+        function openFullscreen() {
+            const code = document.getElementById('codeOutput').value;
+            if (!code) {
+                showStatus('No code to preview', 'error');
+                return;
+            }
+            
+            const fullscreenModal = document.getElementById('fullscreenModal');
+            const fullscreenFrame = document.getElementById('fullscreenFrame');
+            fullscreenFrame.srcdoc = code;
+            fullscreenModal.classList.remove('hidden');
+        }
+
+        document.getElementById('closeFullscreen').addEventListener('click', () => {
+            document.getElementById('fullscreenModal').classList.add('hidden');
+        });
+
+        // Responsive view functionality
+        function setupResponsiveViews() {
+            const mobileBtn = document.getElementById('mobileView');
+            const tabletBtn = document.getElementById('tabletView');
+            const desktopBtn = document.getElementById('desktopView');
+            const previewContainer = document.getElementById('previewContainer');
+
+            mobileBtn.addEventListener('click', () => {
+                setActiveView(mobileBtn, [tabletBtn, desktopBtn]);
+                previewContainer.style.maxWidth = '375px';
+                previewContainer.style.margin = '0 auto';
+            });
+
+            tabletBtn.addEventListener('click', () => {
+                setActiveView(tabletBtn, [mobileBtn, desktopBtn]);
+                previewContainer.style.maxWidth = '768px';
+                previewContainer.style.margin = '0 auto';
+            });
+
+            desktopBtn.addEventListener('click', () => {
+                setActiveView(desktopBtn, [mobileBtn, tabletBtn]);
+                previewContainer.style.maxWidth = '100%';
+                previewContainer.style.margin = '0';
+            });
+        }
+
+        function setActiveView(activeBtn, otherBtns) {
+            activeBtn.className = 'p-2 text-xs bg-primary text-white rounded transition-colors';
+            otherBtns.forEach(btn => {
+                btn.className = 'p-2 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors';
+            });
+        }
+
+        // Download project functionality
+        async function downloadProject() {
+            const code = document.getElementById('codeOutput').value;
+            if (!code) {
+                showStatus('No code to download', 'error');
+                return;
+            }
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Preparing...</span>';
+            downloadBtn.disabled = true;
+
+            try {
+                const projectName = 'ai-generated-project-' + Date.now();
+                
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        projectName: projectName
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${projectName}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    showStatus('✅ Project downloaded successfully!', 'success');
+                } else {
+                    throw new Error('Failed to create download');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showStatus('❌ Failed to download project', 'error');
+            } finally {
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> <span>Download</span>';
+                downloadBtn.disabled = false;
+            }
+        }
+
+        // Deploy modal functionality
+        function setupDeployModal() {
+            const deployModal = document.getElementById('deployModal');
+            const closeDeployModal = document.getElementById('closeDeployModal');
+            const cancelDeploy = document.getElementById('cancelDeploy');
+            const confirmDeploy = document.getElementById('confirmDeploy');
+
+            closeDeployModal.addEventListener('click', () => {
+                deployModal.classList.add('hidden');
+            });
+
+            cancelDeploy.addEventListener('click', () => {
+                deployModal.classList.add('hidden');
+            });
+
+            confirmDeploy.addEventListener('click', deployToNetlify);
+        }
+
+        function openDeployModal() {
+            const code = document.getElementById('codeOutput').value;
+            if (!code) {
+                showStatus('No code to deploy', 'error');
+                return;
+            }
+            
+            document.getElementById('deployModal').classList.remove('hidden');
+            
+            // Generate a default site name
+            const timestamp = Date.now().toString().slice(-6);
+            document.getElementById('siteName').value = `ai-site-${timestamp}`;
+        }
+
+        // Deploy to Netlify functionality
+        async function deployToNetlify() {
+            const code = document.getElementById('codeOutput').value;
+            const siteName = document.getElementById('siteName').value.trim();
+            const accessToken = document.getElementById('netlifyToken').value.trim();
+
+            if (!code) {
+                showStatus('No code to deploy', 'error');
+                return;
+            }
+
+            if (!siteName) {
+                showStatus('Please enter a site name', 'error');
+                return;
+            }
+
+            const confirmBtn = document.getElementById('confirmDeploy');
+            const deployStatus = document.getElementById('deployStatus');
+            
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deploying...';
+            deployStatus.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/deploy-netlify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        siteName: siteName,
+                        accessToken: accessToken || undefined
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    deployStatus.innerHTML = `
+                        <div class="deployment-success">
+                            <div class="flex items-center space-x-2 text-green-600">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Successfully deployed!</span>
+                            </div>
+                            <div class="mt-2">
+                                <a href="${data.deployment.url}" target="_blank" 
+                                   class="text-blue-600 hover:underline text-sm">
+                                    🌐 View Site: ${data.deployment.url}
+                                </a>
+                            </div>
+                            ${data.deployment.adminUrl ? `
+                                <div class="mt-1">
+                                    <a href="${data.deployment.adminUrl}" target="_blank" 
+                                       class="text-blue-600 hover:underline text-sm">
+                                        ⚙️ Manage Site
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    showStatus(`🚀 Deployed successfully! Site: ${data.deployment.url}`, 'success');
+                    
+                    // Auto-close modal after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('deployModal').classList.add('hidden');
+                    }, 5000);
+                } else {
+                    throw new Error(data.error || 'Deployment failed');
+                }
+
+            } catch (error) {
+                console.error('Deployment error:', error);
+                deployStatus.innerHTML = `
+                    <div class="text-red-600">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Deployment failed</span>
+                        </div>
+                        <div class="text-sm mt-1">${error.message}</div>
+                    </div>
+                `;
+                showStatus('❌ Deployment failed: ' + error.message, 'error');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = 'Deploy';
+            }
+        }
+
+        // Status message functionality
+        function showStatus(message, type = 'info') {
+            const statusMessage = document.getElementById('statusMessage');
+            const bgColors = {
+                'success': 'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
+                'error': 'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+                'info': 'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+            };
+            
+            statusMessage.className = `p-3 rounded-lg text-sm ${bgColors[type]}`;
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden');
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 4000);
+            }
+        }
+
+        // Keyboard shortcuts
+        function handleKeyboardShortcuts(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                generateCode();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                downloadProject();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                openDeployModal();
+            }
+        }
+
+        // Check server connection
+        async function checkServerConnection() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                console.log('Server connected:', data);
+                showStatus('✅ Connected to server', 'success');
+                
+                // Update AI status indicators
+                updateAIStatus(data.features);
+                
+            } catch (error) {
+                console.error('Server connection failed:', error);
+                showStatus('❌ Failed to connect to server', 'error');
+            }
+        }
+
+        // Update AI status indicators
+        function updateAIStatus(features) {
+            const aiStatus = document.getElementById('aiStatus');
+            const indicators = [];
+            
+            if (features.claude) {
+                indicators.push('<span class="model-indicator model-claude"></span><span class="text-xs">Claude</span>');
+            }
+            if (features.mistral) {
+                indicators.push('<span class="model-indicator model-mistral"></span><span class="text-xs">Mistral</span>');
+            }
+            if (features.gemini) {
+                indicators.push('<span class="model-indicator model-gemini"></span><span class="text-xs">Gemini</span>');
+            }
+            
+            aiStatus.innerHTML = indicators.join('');
+        }
+
+        // Initialize tooltips and animations
+        function initializeEnhancements() {
+            // Add hover effects to buttons
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', () => {
+                    button.style.transform = 'translateY(-1px)';
+                });
+                button.addEventListener('mouseleave', () => {
+                    button.style.transform = 'translateY(0)';
+                });
+            });
+        }
+
+        // Call initialization
+        initializeEnhancements();
+
+        console.log('Frontend Designer v2.0 loaded successfully with enhanced features! 🚀');
+        console.log('Features: Google Gemini AI, Direct Download, Netlify Deployment');
+    </script>
+</body>
+</html>
