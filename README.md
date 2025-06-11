@@ -456,6 +456,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE AI AGENT OR THE USE OR OTHER DEALINGS IN THE
 AI AGENT.
 ```
+## 🔑 AI API Platform Integration
+
+| Feature | 🔑 Claude API | ⚡ Mistral API | 👁️ Gemini API |
+|---------|---------------|---------------|---------------|
+| **Code Generation** | ⭐⭐⭐⭐⭐ 95% | ⭐⭐⭐⭐ 88% | ⭐⭐⭐⭐ 85% |
+| **Prompt Enhancement** | ⭐⭐⭐⭐ 90% | ⭐⭐⭐⭐⭐ 95% | ⭐⭐⭐⭐ 80% |
+| **Image Analysis** | ⭐⭐⭐⭐ 85% | ⭐⭐⭐ 70% | ⭐⭐⭐⭐⭐ 95% |
+| **Response Speed** | ⭐⭐⭐⭐ 88% | ⭐⭐⭐⭐⭐ 95% | ⭐⭐⭐⭐ 90% |
+| **Code Quality** | ⭐⭐⭐⭐⭐ 95% | ⭐⭐⭐⭐ 85% | ⭐⭐⭐⭐ 88% |
+| **Creative Output** | ⭐⭐⭐⭐ 90% | ⭐⭐⭐⭐⭐ 92% | ⭐⭐⭐⭐ 85% |
+
+### 🔑 Configure Your API Keys:
+```env
+CLAUDE_API_KEY=your_anthropic_api_key_here
+MISTRAL_API_KEY=your_mistral_api_key_here  
+GEMINI_API_KEY=your_google_ai_api_key_here
+```
+![image](https://github.com/user-attachments/assets/e28853b6-c99d-44f7-80e2-01fb137343b3)
+![image](https://github.com/user-attachments/assets/52e3219f-93b6-4f4f-b8d2-33921c26c962)
+![image](https://github.com/user-attachments/assets/e1a72fbc-0a9e-4973-a929-8cf61651a815)
 
 ## 🙏 AI Acknowledgments & Vibes
 
