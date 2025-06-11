@@ -823,15 +823,7 @@
             showStatus(`Generating code with ${aiModel.toUpperCase()}...`, 'info');
 
             try {
-                // Use Netlify function or local API based on environment
-                let apiUrl = '/.netlify/functions/generate';
-                
-                // If running locally, use local server
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    apiUrl = '/api/generate';
-                }
-                
-                const response = await fetch(apiUrl, {
+                const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -860,20 +852,8 @@
                 
             } catch (error) {
                 console.error('Error generating code:', error);
-                
-                // Try fallback generation
-                try {
-                    const fallbackCode = generateLocalFallback(prompt);
-                    currentCode = fallbackCode;
-                    codeOutput.value = fallbackCode;
-                    updatePreview(fallbackCode);
-                    updateCodeStats(fallbackCode);
-                    showStatus('⚡ Generated using local fallback (offline mode)', 'success');
-                    document.getElementById('modelStatus').textContent = 'Fallback';
-                } catch (fallbackError) {
-                    showStatus('❌ Error: ' + error.message, 'error');
-                    document.getElementById('modelStatus').textContent = 'Error';
-                }
+                showStatus('❌ Error: ' + error.message, 'error');
+                document.getElementById('modelStatus').textContent = 'Error';
             } finally {
                 // Reset UI state
                 loadingIndicator.classList.add('hidden');
@@ -881,51 +861,6 @@
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<i class="fas fa-magic"></i> <span>Generate Code</span>';
             }
-        }
-
-        // Local fallback for offline mode
-        function generateLocalFallback(prompt) {
-            return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Generated Page</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center">
-    <div class="max-w-4xl mx-auto p-8 bg-white rounded-2xl shadow-2xl">
-        <h1 class="text-4xl font-bold text-gray-900 mb-6 text-center">
-            ${prompt}
-        </h1>
-        <p class="text-lg text-gray-600 text-center mb-8">
-            Generated in offline mode using local templates
-        </p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="p-6 bg-blue-50 rounded-lg text-center hover:shadow-lg transition-shadow">
-                <div class="text-4xl mb-4">🚀</div>
-                <h3 class="font-semibold text-lg">Fast</h3>
-                <p class="text-sm text-gray-600">Lightning fast performance</p>
-            </div>
-            <div class="p-6 bg-green-50 rounded-lg text-center hover:shadow-lg transition-shadow">
-                <div class="text-4xl mb-4">🔒</div>
-                <h3 class="font-semibold text-lg">Secure</h3>
-                <p class="text-sm text-gray-600">Bank-level security</p>
-            </div>
-            <div class="p-6 bg-purple-50 rounded-lg text-center hover:shadow-lg transition-shadow">
-                <div class="text-4xl mb-4">❤️</div>
-                <h3 class="font-semibold text-lg">Easy</h3>
-                <p class="text-sm text-gray-600">Simple to use interface</p>
-            </div>
-        </div>
-        <div class="text-center mt-8">
-            <button class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                Get Started
-            </button>
-        </div>
-    </div>
-</body>
-</html>`;
         }
 
         // Update preview
@@ -1258,36 +1193,18 @@
         // Check server connection
         async function checkServerConnection() {
             try {
-                // Try Netlify function first, then fallback to local server
-                let healthUrl = '/.netlify/functions/health';
-                
-                // If running locally, use local server
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    healthUrl = '/health';
-                }
-                
-                const response = await fetch(healthUrl);
+                const response = await fetch('/health');
                 const data = await response.json();
                 
                 console.log('Server connected:', data);
                 showStatus('✅ Connected to server', 'success');
                 
                 // Update AI status indicators
-                if (data.features) {
-                    updateAIStatus(data.features);
-                }
+                updateAIStatus(data.features);
                 
             } catch (error) {
                 console.error('Server connection failed:', error);
-                showStatus('⚡ Running in offline mode (using fallbacks)', 'info');
-                
-                // Set fallback status
-                updateAIStatus({
-                    claude: false,
-                    mistral: false,
-                    gemini: false,
-                    netlify: false
-                });
+                showStatus('❌ Failed to connect to server', 'error');
             }
         }
 
