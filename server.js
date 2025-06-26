@@ -62,12 +62,12 @@ const AI_CONFIGS = {
             'Content-Type': 'application/json'
         }
     },
-    gemini: {
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        headers: {
-            'Content-Type': 'application/json'
-        }
+gemini: {
+    url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    headers: {
+        'Content-Type': 'application/json'
     }
+}
 };
 
 // System prompt for AI models
